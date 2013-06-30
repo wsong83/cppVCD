@@ -57,12 +57,25 @@ namespace vcd {
     int lexer(vcd_token_type *);
 
   private:
+    enum state_t {
+      S_BEGIN = 0,
+      S_SCOPE_DECL, S_SCOPE_TYPE,
+      S_TIMESCALE_DECL, S_TIMESCALE_TIME,
+      S_VAR_DECL, S_VAR_TYPE, S_VAR_WIDTH, S_VAR_ID, S_VAR_CID, S_VAR_RANGE,
+      S_SIM_DECL, S_SIM_TYPE, 
+      S_SIM_TIME, 
+      S_VALUE_CHANGE_SCALAR, S_VALUE_CHANGE_VB, S_VALUE_CHANGE_VR
+    }
+
     std::istream * istm;        // input stream
     std::string buf;
     unsigned int state;
 
     std::string next_token();   // get the next token
     int validate_token(const std::string&, vcd_token_type *); // analyse the token
+    int conv_to_string(const std::string&, vcd_token_type *); // convert the token to a string
+    int conv_to_dec(const std::string&, vcd_token_type *);    // convert the token to a decimal number
+    int conv_to_real(const std::string&, vcd_token_type *);   // convert the token to a real number
 
   };
 
