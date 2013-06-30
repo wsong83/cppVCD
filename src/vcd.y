@@ -135,6 +135,7 @@ simulation_command
     : VCDSimCmdType value_changes "$end" 
     | comment_command
     | value_change
+    | simulation_time
     | error
 
 simulation_time 

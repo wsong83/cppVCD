@@ -26,6 +26,8 @@
  *
  */
 
+#idndef VCD_UTIL_H_
+#define VCD_UTIL_H_
 
 #include <string>
 #include <iostream>
@@ -54,8 +56,16 @@ namespace vcd {
     VCDLexer(std::istream *);
     int lexer(vcd_token_type *);
 
-
   private:
     std::istream * istm;        // input stream
-  }
+    std::string buf;
+    unsigned int state;
+
+    std::string next_token();   // get the next token
+    int validate_token(const std::string&, vcd_token_type *); // analyse the token
+
+  };
+
 }
+
+#endif
