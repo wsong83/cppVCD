@@ -31,6 +31,7 @@
 
 #include <string>
 #include <iostream>
+#include <gmpxx.h>
 
 namespace vcd {
   
@@ -40,7 +41,7 @@ namespace vcd {
     std::string              tBValue;         /* binary value vector */
     double                   tReal;           /* real value */
     int                      tType;           /* types to differentiate key words */
-    unsigned long            tNum;            // number
+    mpz_class                tNum;            // number
   };
 
   enum time_unit_t { time_s, time_ms, time_us, time_ns, time_ps, time_fs};
@@ -62,7 +63,6 @@ namespace vcd {
       S_SCOPE_DECL, S_SCOPE_TYPE,
       S_TIMESCALE_DECL, S_TIMESCALE_TIME,
       S_VAR_DECL, S_VAR_TYPE, S_VAR_WIDTH, S_VAR_ID, S_VAR_CID, S_VAR_RANGE,
-      S_SIM_DECL, S_SIM_TYPE, 
       S_SIM_TIME, 
       S_VALUE_CHANGE_SCALAR, S_VALUE_CHANGE_VB, S_VALUE_CHANGE_VR
     }

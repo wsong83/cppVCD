@@ -34,7 +34,7 @@ using namespace vcd;
 vcd::VCDLexer(std::istream * i) 
   : istm(i), state(0) { }
 
-int vcd::lexer(vcd_token_type * rv) {
+int vcd::VCDLexer::lexer(vcd_token_type * rv) {
   while(true) {
     if(buf.empty()) {
       if(istm->eof()) return 0;
@@ -66,10 +66,10 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
     if(t == "$scope")     { state = S_SCOPE_DECL;     return VCDScope;     }
     if(t == "$timescale") { state = S_TIMESCALE_DECL; return VCDTimeScale; }
     if(t == "$var")       { state = S_VAR_DECL;       return VCDVar;       }
-    if(t == "$dumpall")   { state = S_SIM_DECL; tt->tType = sim_all;  return VCDDumpAll;  }
-    if(t == "$dumpoff")   { state = S_SIM_DECL; tt->tType = sim_off;  return VCDDumpOff;  }
-    if(t == "$dumpon")    { state = S_SIM_DECL; tt->tType = sim_on;   return VCDDumpOn;   }
-    if(t == "$dumpvars")  { state = S_SIM_DECL; tt->tType = sim_vars; return VCDDumpVars; }
+    if(t == "$dumpall")   { state = S_SIM_BEGIN; tt->tType = sim_all;  return VCDSimCmdType;  }
+    if(t == "$dumpoff")   { state = S_SIM_BEGIN; tt->tType = sim_off;  return VCDSimCmdType;  }
+    if(t == "$dumpon")    { state = S_SIM_BEGIN; tt->tType = sim_on;   return VCDSimCmdType;  }
+    if(t == "$dumpvars")  { state = S_SIM_BEGIN; tt->tType = sim_vars; return VCDSimCmdType; }
     if(t[0] == '#')       { state = S_SIM_TIME; buf.insert(0, t, 1, t.size()-1); return '#'; }
     if(t[0] == '0' || t[0] == '1') {
       state = S_VALUE_CHANGE_SCALAR; 
@@ -186,41 +186,51 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
   }
   case S_VAR_RANGE: {
     if(t[0] == ':') { buf.insert(0, t, 1, t.size()-1); return ':'; }
-    if(t[0] == ']') { state = S_BEGIN; buf.insert(0, t, 1, t.size()-1); return ']'; }
+    if(t[0] == ']') { state = S_CID; buf.insert(0, t, 1, t.size()-1); return ']'; }
     int rt = conv_to_dec(t, tt);
     if(rt != VCDNum) state = S_BEGIN;
     return rt;
   }
-  case S_SIM_DECL:
-  case S_SIM_TYPE:
-  case S_SIM_TIME: 
-  case S_VALUE_CHANGE_SCALAR:
-  case S_VALUE_CHANGE_VB:
-  case S_VALUE_CHANGE_VR:
+  case S_SIM_TIME: {
+    state = S_BEGIN;
+    return conv_to_dec(t, tt);        
+  } 
+  case S_VALUE_CHANGE_SCALAR: {
+    state = S_BEGIN;
+    return conv_to_string(t, tt);
+  }
+  case S_VALUE_CHANGE_VB: {
+    state = S_BEGIN;
+    tt->tBValue = t;
+    return VCDBValue;
+  }    
+  case S_VALUE_CHANGE_VR: {
+    state = S_BEGIN;
+    return conv_to_real(t, tt);
+  }
   default:
     assert(0 == "wrong lexer state");
     return 0;
   }
 }
 
-
-int vcd::conv_to_string(const string& t, vcd_token_type * tt) {
+int vcd::VCDLexer::conv_to_string(const string& t, vcd_token_type * tt) {
   tt->tStr = t;
   return VCDStr;
 }
 
-int vcd::conv_to_dec(const string& t, vcd_token_type * tt) {
+int vcd::VCDLexer::conv_to_dec(const string& t, vcd_token_type * tt) {
   try {
-    tt->tNum = boost::lexical_cast<unsigned long>(t);
+    tt->tNum = t;
     return VCDNum;
-  } catch(boost::bad_lexical_cast &) {
+  } catch(std::invalid_argument &) {
     assert(0 == "unrecognizable decimal number");
     tt->tStr = t;
     return VCDStr;
   }
 }
 
-int vcd::conv_to_real(const string& t, vcd_token_type * tt) {
+int vcd::VCDLexer::conv_to_real(const string& t, vcd_token_type * tt) {
   try {
     tt->tReal = boost::lexical_cast<double>(t);
     return VCDReal;

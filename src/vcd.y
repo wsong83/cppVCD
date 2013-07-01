@@ -60,10 +60,6 @@
 %token VCDUpScope                        "$upscope"
 %token VCDVar                            "$var"
 %token VCDVersion                        "$version"
-%token VCDDumpAll                        "$dumpall"
-%token VCDDumpOff                        "$dumpoff"
-%token VCDDumpOn                         "$dumpon"
-%token VCDDumpVars                       "$dumpvars"
 %token<tType>   VCDTimeUnit
 %token<tType>   VCDScopeType
 %token<tType>   VCDVarType
@@ -127,8 +123,14 @@ var_decl
 
 complex_identifier
     : identifier
-    | identifier '[' VCDNum ']'
-    | identifier '[' VCDNum ':' VCDNum ']'
+    | identifier range
+    | error
+
+range
+    : '[' VCDNum ']'
+    | '[' VCDNum ':' VCDNum ']'
+    | range '[' VCDNum ']'
+    | range '[' VCDNum ':' VCDNum ']'
     | error
 
 simulation_command
