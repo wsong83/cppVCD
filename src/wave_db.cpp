@@ -65,3 +65,23 @@ void vcd::WaveDB::add_id(const std::string& id, const std::string& ref, const CR
   idDB[id] = SigRecord(ref, r, w);
   sigDB[ref] += SigRecord(ref, r, w);
 }
+
+void vcd::WaveDB::add_change(const string& id, const string& v) {
+  // find the signal record
+  assert(idDB.count(id));
+  SigRecord sig_record = idDB[id];
+  
+  // record the value in the signal database
+  assert(sigDB.count(sig_record.sig_name));
+  sigDB[sig_record.sig_name].record_change(sig_record, v);
+}
+
+void vcd::WaveDB::add_change(const string& id, double v) {
+  // find the signal record
+  assert(idDB.count(id));
+  SigRecord sig_record = idDB[id];
+
+  // record the value in the signal database
+  assert(sigDB.count(sig_record.sig_name));
+  sigDB[sig_record.sig_name].record_change(sig_record, v);
+}
