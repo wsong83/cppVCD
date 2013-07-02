@@ -20,49 +20,27 @@
  */
 
 /* 
- * A waveform data base
- * 01/07/2013   Wei Song
+ * const range for VCD database
+ * 02/07/2013   Wei Song
  *
  *
  */
 
-#include "wave_db.hpp"
+#include "crange.hpp"
 
-using std::string;
+using namespace vcd;
+using std::pair;
+using std::vector;
 
-vcd::WaveDB::WaveDB() 
-  : delimiter('/'), time_unit("ns"), current_time(0) { }
+VRange& vcd::VRange::operator+ (const VRange& rhs) {
+  if(v.size() == 0)
+    v = rhs.v;
+  else if(rhs.v.size() > 0)
+    combine(rhs.v);
 
-void vcd::WaveDB::set_delimiter(char d) {
-  delimiter = d;
+  return *this;
 }
 
-void vcd::WaveDB::set_time_unit(const string& u) {
-  time_unit = u;
+void vcd::VRange::combine(const vector<pair<long> >& rhs) {
+  
 }
-
-void vcd::WaveDB::push_scope(const string& s) {
-  if(current_scope.size() == 0)
-    hier = s;
-  else
-    hier += "/" + s;
-  current_scope.push_back(s);
-}
-
-void vcd::WaveDB::pop_scope() {
-  if(current_scope.size() <= 1)  
-    hier = "";
-  else
-    hier = hier.substr(0, hier.size() - current_scope.back().size() - 1);
-  current_scope.pop_back();
-}
-
-void vcd::WaveDB::set_time(mpz_class t) {
-  current_time = t;
-}
-
-void vcd::WaveDB::add_id(const std::string& id, const std::string& ref, const CRange& r, unsigned int width w) {
-  idDB[id] = SigRecord(ref, r, w);
-  sigDB[ref] += SigRecord(ref, r, w);
-}
-

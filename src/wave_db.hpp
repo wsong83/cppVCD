@@ -54,10 +54,13 @@ namespace vcd {
     void pop_scope();
     void set_time(mpz_class);
     void add_id(const std::string&, const std::string&, const CRange&, unsigned int width);
-    void add_change(const std::string&, const std::string&);
-    void add_change(const std::string&, double);
-
-
+    template<typename VT>
+    void add_change(const std::string& id, const VT& v) {
+      assert(idDB.count(id));
+      SigRecord sr = idDB[id];
+      assert(sigDB.count(sr.sig_name));
+      sigDB[sr.sig_name].record_change(sr, v);
+    }
 
   private:
     char delimiter;
@@ -67,9 +70,6 @@ namespace vcd {
     mpz_class current_time;
     std::map<std::string, SigRecord> idDB;    // store the ids in VCD 
     std::map<std::string, SigRecord> sigDB;   // store the signals in VCD
-
-    
-
   };
 
 }

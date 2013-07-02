@@ -39,6 +39,10 @@ namespace vcd {
   class VRange {
   public:
     std::vector<std::pair<long> > v;
+    VRange& operator+ (const VRange&);
+
+  private:
+    void combine(const std::vector<std::pair<long> >&);
   };
   
   // multi-dimentional range
