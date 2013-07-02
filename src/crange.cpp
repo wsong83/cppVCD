@@ -42,5 +42,33 @@ VRange& vcd::VRange::operator+ (const VRange& rhs) {
 }
 
 void vcd::VRange::combine(const vector<pair<long> >& rhs) {
-  
+  BOOST_FOREACH(const vrange_type& vr, rhs) {
+    combine(vr);
+  }
+}
+
+void vcd::VRange::combine(const pair<long>& rhs) {
+  vector<pair<long> >::iterator it = v.begin();
+  it += search(rhs);
+  // todo
+}
+
+unsigned int vcd::VRange::search(const pair<long>& rhs) const {
+  unsigned int s = v.size();
+  unsigned int i = 0;
+  unsigned int j = s/2;
+  unsigned int k = s-1;
+
+  while(true) {
+    if(v[j].first > rhs.first && rhs.first >= v[k].first) {
+      i = j;
+      j = (i + k + 1)/2;
+      continue;
+    } else if(rhs.first > v[j].first && v[i].first >= rhs.first) {
+      k = j;
+      j = (i + k)/2;
+      continue;
+    }
+    return j;
+  }
 }

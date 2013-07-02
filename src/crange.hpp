@@ -39,6 +39,7 @@ namespace vcd {
   class VRange {
   public:
     std::vector<std::pair<long> > v;
+    typedef std::pair<long> vrange_type;
     VRange& operator+ (const VRange&);
 
   private:
