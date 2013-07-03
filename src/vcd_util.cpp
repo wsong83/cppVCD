@@ -27,18 +27,22 @@
  */
 
 #include "vcd_util.hpp"
+#include "vcd.hh"
 #include <boost/lexical_cast.hpp>
 
 using namespace vcd;
+using std::string;
 
-vcd::VCDLexer(std::istream * i) 
+#define TType vcd_parser::token 
+
+vcd::VCDLexer::VCDLexer(std::istream * i) 
   : istm(i), state(0) { }
 
 int vcd::VCDLexer::lexer(vcd_token_type * rv) {
   while(true) {
     if(buf.empty()) {
       if(istm->eof()) return 0;
-      else std::get_line(*istm, buf);
+      else std::getline(*istm, buf);
     }
 
     string token = next_token();
@@ -49,7 +53,7 @@ int vcd::VCDLexer::lexer(vcd_token_type * rv) {
   }
 }
 
-string vcd::next_token() {
+string vcd::VCDLexer::next_token() {
   // get rid of starting blanks
   buf.erase(0, buf.find_first_not_of(' '));
   if(buf.empty()) return buf;
@@ -60,34 +64,42 @@ string vcd::next_token() {
   return t;
 }
 
-int vcd::validate_token(const string& t, vcd_token_type * tt) {
+int vcd::VCDLexer::validate_token(const string& t, vcd_token_type * tt) {
   switch(state) {
   case S_BEGIN: {
-    if(t == "$scope")     { state = S_SCOPE_DECL;     return VCDScope;     }
-    if(t == "$timescale") { state = S_TIMESCALE_DECL; return VCDTimeScale; }
-    if(t == "$var")       { state = S_VAR_DECL;       return VCDVar;       }
-    if(t == "$dumpall")   { state = S_SIM_BEGIN; tt->tType = sim_all;  return VCDSimCmdType;  }
-    if(t == "$dumpoff")   { state = S_SIM_BEGIN; tt->tType = sim_off;  return VCDSimCmdType;  }
-    if(t == "$dumpon")    { state = S_SIM_BEGIN; tt->tType = sim_on;   return VCDSimCmdType;  }
-    if(t == "$dumpvars")  { state = S_SIM_BEGIN; tt->tType = sim_vars; return VCDSimCmdType; }
-    if(t[0] == '#')       { state = S_SIM_TIME; buf.insert(0, t, 1, t.size()-1); return '#'; }
+    if(t == "$scope")     
+      { state = S_SCOPE_DECL;     return TType::VCDScope;     }
+    if(t == "$timescale") 
+      { state = S_TIMESCALE_DECL; return TType::VCDTimeScale; }
+    if(t == "$var")       
+      { state = S_VAR_DECL;       return TType::VCDVar;       }
+    if(t == "$dumpall")   
+      { state = S_BEGIN; tt->tType = sim_all;  return TType::VCDSimCmdType;  }
+    if(t == "$dumpoff")   
+      { state = S_BEGIN; tt->tType = sim_off;  return TType::VCDSimCmdType;  }
+    if(t == "$dumpon")    
+      { state = S_BEGIN; tt->tType = sim_on;   return TType::VCDSimCmdType;  }
+    if(t == "$dumpvars")  
+      { state = S_BEGIN; tt->tType = sim_vars; return TType::VCDSimCmdType;  }
+    if(t[0] == '#')       
+      { state = S_SIM_TIME; buf.insert(0, t, 1, t.size()-1); return '#'; }
     if(t[0] == '0' || t[0] == '1') {
       state = S_VALUE_CHANGE_SCALAR; 
       buf.insert(0, t, 1, t.size()-1); 
       tt->tValue = t[0];
-      return VCDValue;
+      return TType::VCDValue;
     }
     if(t[0] == 'x' || t[0] == 'X') {
       state = S_VALUE_CHANGE_SCALAR; 
       buf.insert(0, t, 1, t.size()-1); 
       tt->tValue = 'x';
-      return VCDValue;
+      return TType::VCDValue;
     }
     if(t[0] == 'z' || t[0] == 'Z') {
       state = S_VALUE_CHANGE_SCALAR; 
       buf.insert(0, t, 1, t.size()-1); 
       tt->tValue = 'z';
-      return VCDValue;
+      return TType::VCDValue;
     }
     if(t[0] == 'b' || t[0] == 'B') {
       state = S_VALUE_CHANGE_VB;
@@ -100,14 +112,19 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
       return 'r';
     }
     tt->tStr = t;
-    return VCDStr;
+    return TType::VCDStr;
   }
   case S_SCOPE_DECL: {
-    if(t == "begin")    { tt->tType = scope_begin;    state = S_SCOPE_TYPE; return VCDScopeType; }
-    if(t == "fork")     { tt->tType = scope_fork;     state = S_SCOPE_TYPE; return VCDScopeType; }
-    if(t == "function") { tt->tType = scope_function; state = S_SCOPE_TYPE; return VCDScopeType; }
-    if(t == "module")   { tt->tType = scope_module;   state = S_SCOPE_TYPE; return VCDScopeType; }
-    if(t == "task")     { tt->tType = scope_task;     state = S_SCOPE_TYPE; return VCDScopeType; }
+    if(t == "begin")    
+      { tt->tType = scope_begin;    state = S_SCOPE_TYPE; return TType::VCDScopeType; }
+    if(t == "fork")     
+      { tt->tType = scope_fork;     state = S_SCOPE_TYPE; return TType::VCDScopeType; }
+    if(t == "function") 
+      { tt->tType = scope_function; state = S_SCOPE_TYPE; return TType::VCDScopeType; }
+    if(t == "module")   
+      { tt->tType = scope_module;   state = S_SCOPE_TYPE; return TType::VCDScopeType; }
+    if(t == "task")     
+      { tt->tType = scope_task;     state = S_SCOPE_TYPE; return TType::VCDScopeType; }
     
     assert(0 == "wrong scope type");
     state = S_BEGIN;
@@ -119,40 +136,57 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
   }    
   case S_TIMESCALE_DECL: {
     int rt = conv_to_dec(t, tt);
-    if(rt == VCDNum) state = S_TIMESCALE_TIME;
-    else             state = S_BEGIN;
+    if(rt == TType::VCDNum) state = S_TIMESCALE_TIME;
+    else                         state = S_BEGIN;
     return rt;
   }
   case S_TIMESCALE_TIME: {
-    if(t == "s")  { tt->tType = time_s;   state = S_BEGIN; return VCDTimeUnit; }
-    if(t == "ms") { tt->tType = time_ms;  state = S_BEGIN; return VCDTimeUnit; }
-    if(t == "us") { tt->tType = time_us;  state = S_BEGIN; return VCDTimeUnit; }
-    if(t == "ns") { tt->tType = time_ns;  state = S_BEGIN; return VCDTimeUnit; }
-    if(t == "ps") { tt->tType = time_ps;  state = S_BEGIN; return VCDTimeUnit; }
-    if(t == "fs") { tt->tType = time_fs;  state = S_BEGIN; return VCDTimeUnit; }
+    if(t == "s")  { tt->tType = time_s;   state = S_BEGIN; return TType::VCDTimeUnit; }
+    if(t == "ms") { tt->tType = time_ms;  state = S_BEGIN; return TType::VCDTimeUnit; }
+    if(t == "us") { tt->tType = time_us;  state = S_BEGIN; return TType::VCDTimeUnit; }
+    if(t == "ns") { tt->tType = time_ns;  state = S_BEGIN; return TType::VCDTimeUnit; }
+    if(t == "ps") { tt->tType = time_ps;  state = S_BEGIN; return TType::VCDTimeUnit; }
+    if(t == "fs") { tt->tType = time_fs;  state = S_BEGIN; return TType::VCDTimeUnit; }
     
     assert(0 == "wrong time unit");
     state = S_BEGIN;
     return conv_to_string(t, tt);
   }
   case S_VAR_DECL: {
-    if(t == "event")     { tt->tType = var_event;     state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "integer")   { tt->tType = var_integer;   state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "parameter") { tt->tType = var_parameter; state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "real")      { tt->tType = var_real;      state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "reg")       { tt->tType = var_reg;       state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "supply0")   { tt->tType = var_supply0;   state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "supply1")   { tt->tType = var_supply1;   state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "time")      { tt->tType = var_time;      state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "tri")       { tt->tType = var_tri;       state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "triand")    { tt->tType = var_triand;    state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "trior")     { tt->tType = var_trior;     state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "trireg")    { tt->tType = var_trireg;    state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "tri0")      { tt->tType = var_tri0;      state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "tri1")      { tt->tType = var_tri1;      state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "wand")      { tt->tType = var_wand;      state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "wire")      { tt->tType = var_wire;      state = S_VAR_TYPE; return VCDVarType; }
-    if(t == "wor")       { tt->tType = var_wor;       state = S_VAR_TYPE; return VCDVarType; }
+    if(t == "event")     
+      { tt->tType = var_event;     state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "integer")   
+      { tt->tType = var_integer;   state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "parameter") 
+      { tt->tType = var_parameter; state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "real")      
+      { tt->tType = var_real;      state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "reg")       
+      { tt->tType = var_reg;       state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "supply0")   
+      { tt->tType = var_supply0;   state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "supply1")   
+      { tt->tType = var_supply1;   state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "time")      
+      { tt->tType = var_time;      state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "tri")       
+      { tt->tType = var_tri;       state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "triand")    
+      { tt->tType = var_triand;    state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "trior")     
+      { tt->tType = var_trior;     state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "trireg")    
+      { tt->tType = var_trireg;    state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "tri0")      
+      { tt->tType = var_tri0;      state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "tri1")      
+      { tt->tType = var_tri1;      state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "wand")      
+      { tt->tType = var_wand;      state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "wire")      
+      { tt->tType = var_wire;      state = S_VAR_TYPE; return TType::VCDVarType; }
+    if(t == "wor")       
+      { tt->tType = var_wor;       state = S_VAR_TYPE; return TType::VCDVarType; }
     
     assert(0 == "wrong variable type");
     state = S_BEGIN;
@@ -160,8 +194,8 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
   }
   case S_VAR_TYPE: {
     int rt = conv_to_dec(t, tt);
-    if(rt == VCDNum) state = S_VAR_WIDTH;
-    else             state = S_BEGIN;
+    if(rt == TType::VCDNum) state = S_VAR_WIDTH;
+    else                         state = S_BEGIN;
     return rt;    
   }
   case S_VAR_WIDTH: {
@@ -186,9 +220,9 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
   }
   case S_VAR_RANGE: {
     if(t[0] == ':') { buf.insert(0, t, 1, t.size()-1); return ':'; }
-    if(t[0] == ']') { state = S_CID; buf.insert(0, t, 1, t.size()-1); return ']'; }
+    if(t[0] == ']') { state = S_VAR_CID; buf.insert(0, t, 1, t.size()-1); return ']'; }
     int rt = conv_to_dec(t, tt);
-    if(rt != VCDNum) state = S_BEGIN;
+    if(rt != TType::VCDNum) state = S_BEGIN;
     return rt;
   }
   case S_SIM_TIME: {
@@ -202,7 +236,7 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
   case S_VALUE_CHANGE_VB: {
     state = S_BEGIN;
     tt->tBValue = t;
-    return VCDBValue;
+    return TType::VCDBValue;
   }    
   case S_VALUE_CHANGE_VR: {
     state = S_BEGIN;
@@ -216,27 +250,27 @@ int vcd::validate_token(const string& t, vcd_token_type * tt) {
 
 int vcd::VCDLexer::conv_to_string(const string& t, vcd_token_type * tt) {
   tt->tStr = t;
-  return VCDStr;
+  return TType::VCDStr;
 }
 
 int vcd::VCDLexer::conv_to_dec(const string& t, vcd_token_type * tt) {
   try {
     tt->tNum = t;
-    return VCDNum;
+    return TType::VCDNum;
   } catch(std::invalid_argument &) {
     assert(0 == "unrecognizable decimal number");
     tt->tStr = t;
-    return VCDStr;
+    return TType::VCDStr;
   }
 }
 
 int vcd::VCDLexer::conv_to_real(const string& t, vcd_token_type * tt) {
   try {
     tt->tReal = boost::lexical_cast<double>(t);
-    return VCDReal;
+    return TType::VCDReal;
   } catch(boost::bad_lexical_cast &) {
     assert(0 == "unrecognizable real number");
     tt->tStr = t;
-    return VCDStr;
+    return TType::VCDStr;
   }
 }

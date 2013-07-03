@@ -26,12 +26,16 @@
  *
  */
 
-#idndef VCD_UTIL_H_
+#ifndef VCD_UTIL_H_
 #define VCD_UTIL_H_
 
 #include <string>
 #include <iostream>
 #include <gmpxx.h>
+#include "crange.hpp"
+#include "wave_db.hpp"
+
+#define YYSTYPE vcd::vcd_token_type
 
 namespace vcd {
   
@@ -42,6 +46,7 @@ namespace vcd {
     double                   tReal;           /* real value */
     int                      tType;           /* types to differentiate key words */
     mpz_class                tNum;            // number
+    std::pair<std::string, CRange> tCId;      // complex id
   };
 
   enum time_unit_t { time_s, time_ms, time_us, time_ns, time_ps, time_fs};
@@ -65,7 +70,7 @@ namespace vcd {
       S_VAR_DECL, S_VAR_TYPE, S_VAR_WIDTH, S_VAR_ID, S_VAR_CID, S_VAR_RANGE,
       S_SIM_TIME, 
       S_VALUE_CHANGE_SCALAR, S_VALUE_CHANGE_VB, S_VALUE_CHANGE_VR
-    }
+    };
 
     std::istream * istm;        // input stream
     std::string buf;
@@ -78,6 +83,8 @@ namespace vcd {
     int conv_to_real(const std::string&, vcd_token_type *);   // convert the token to a real number
 
   };
+
+  std::string timeunit_stype(int);
 
 }
 

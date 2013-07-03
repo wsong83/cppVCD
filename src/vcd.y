@@ -6,6 +6,7 @@
 %language "c++"
 %output "vcd.cc"
 %parse-param {vcd::VCDLexer* lexer}
+%parse-param {vcd::WaveDB* db}
 %{
 /*
  * Copyright (c) 2013-2013 Wei Song <songw@cs.man.ac.uk> 
@@ -38,8 +39,8 @@
 #include "vcd_util.hpp"
   
 #define yylex lexer->lexer
-#define YYSTYPE vcd::vcd_token_type
 
+  using namespace vcd;
 %}
 
 
@@ -70,9 +71,12 @@
 %token<tReal>   VCDReal
 %token<tNum>    VCDNum
 
+%type<tStr>     identifier
+%type<tCId>     complex_identifier
+
 // types
 
-%start source_text
+%start value_change_dump_definitions
 
 %%
 
@@ -93,16 +97,14 @@ declaration_command
     : comment_command
     | "$date"              comments               "$end"
     | "$enddefinitions"                           "$end"
-    | "$scope"             scope_decl             "$end"
+    | "$scope"             scope_decl             "$end"   
     | "$timescale"         timescale_decl         "$end"
     | "$upscope"                                  "$end"
     | "$var"               var_decl               "$end"
     | "$version"           comments               "$end"
-    | error
 
 comment_command
     : "$comment"           comments               "$end"
-    | error
 
 comments
     :
@@ -111,49 +113,69 @@ comments
 
 scope_decl
     : VCDScopeType identifier
-    | error
+    {
+      db->push_scope($2);
+    }
 
 timescale_decl
     : VCDNum VCDTimeUnit
-    | error
+    {
+      db->set_time_unit($1.get_ui(), timeunit_stype($2));
+    }
 
 var_decl
     : VCDVarType VCDNum identifier complex_identifier
-    | error
+    {
+      db->add_id($3, $4.first, $4.second, $2.get_ui());
+    }
 
 complex_identifier
     : identifier
-    | identifier range
-    | error
-
-range
-    : '[' VCDNum ']'
-    | '[' VCDNum ':' VCDNum ']'
-    | range '[' VCDNum ']'
-    | range '[' VCDNum ':' VCDNum ']'
-    | error
+    {
+      $$.first = $1;
+    }
+    | identifier '[' VCDNum ']'
+    {
+      $$.first = $1;
+      $$.second = CRange($3.get_ui());
+    }
+    | identifier '[' VCDNum ':' VCDNum ']'
+    {
+      $$.first = $1;
+      $$.second = CRange($3.get_ui(), $5.get_ui());
+    }
 
 simulation_command
     : VCDSimCmdType value_changes "$end" 
     | comment_command
     | value_change
     | simulation_time
-    | error
 
 simulation_time 
     : '#' VCDNum
+    {
+      db->set_time($2);
+    }
+
+value_changes
+    : value_change
+    | value_changes value_change
 
 value_change
     : scalar_value_change
     | vector_value_change
-    | error
 
 scalar_value_change
     : VCDValue identifier
+    {
+      db->add_change($2, $1);
+    }
 
 vector_value_change
     : 'b' VCDBValue identifier
+    { db->add_change($3, $2); }
 	| 'r' VCDReal   identifier
+    { db->add_change($3, $2); }
 
 identifier
-    : VCDStr
+: VCDStr  { $$ = $1; }

@@ -31,25 +31,34 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <gmpxx.h>
-#include "crange.h"
+#include <cassert>
+#include "crange.hpp"
 
 namespace vcd {
 
   class SigRecord {
   public:
+    SigRecord();
+    SigRecord(const std::string&, const CRange&, unsigned int);
     std::string sig_name;
     CRange range;
-    std::string value;
-    vector<double> rvalue;
-  }
+    std::map<mpz_class, std::string> value;
+    std::map<mpz_class, double> rvalue;
+
+    void record_change(mpz_class, const SigRecord&, const char&);
+    void record_change(mpz_class, const SigRecord&, const std::string&);
+    void record_change(mpz_class, const SigRecord&, const double&);
+    SigRecord& operator+= (const SigRecord&);
+  };
 
   class WaveDB {
   public:
     WaveDB();
 
     void set_delimiter(char);
-    void set_time_unit(const string&);
+    void set_time_unit(unsigned int, const std::string&);
     void push_scope(const std::string&);
     void pop_scope();
     void set_time(mpz_class);
@@ -59,14 +68,14 @@ namespace vcd {
       assert(idDB.count(id));
       SigRecord sr = idDB[id];
       assert(sigDB.count(sr.sig_name));
-      sigDB[sr.sig_name].record_change(sr, v);
+      sigDB[sr.sig_name].record_change(current_time, sr, v);
     }
 
   private:
     char delimiter;
     std::list<std::string> current_scope;
     std::string hier;
-    std::string time_unit;
+    std::pair<unsigned int, std::string> time_unit;
     mpz_class current_time;
     std::map<std::string, SigRecord> idDB;    // store the ids in VCD 
     std::map<std::string, SigRecord> sigDB;   // store the signals in VCD

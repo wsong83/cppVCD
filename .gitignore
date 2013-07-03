@@ -11,3 +11,9 @@
 *.lai
 *.la
 *.a
+src/location.hh
+src/position.hh
+src/stack.hh
+src/vcd.hh
+src/vcd.cc
+src/vcd.output

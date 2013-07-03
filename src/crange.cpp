@@ -27,12 +27,13 @@
  */
 
 #include "crange.hpp"
+#include <boost/foreach.hpp>
 
 using namespace vcd;
 using std::pair;
 using std::vector;
 
-VRange& vcd::VRange::operator+ (const VRange& rhs) {
+CRange& vcd::CRange::operator+ (const CRange& rhs) {
   if(v.size() == 0)
     v = rhs.v;
   else if(rhs.v.size() > 0)
@@ -41,19 +42,18 @@ VRange& vcd::VRange::operator+ (const VRange& rhs) {
   return *this;
 }
 
-void vcd::VRange::combine(const vector<pair<long> >& rhs) {
-  BOOST_FOREACH(const vrange_type& vr, rhs) {
+void vcd::CRange::combine(const vector<pair<long, long> >& rhs) {
+  BOOST_FOREACH(const crange_type& vr, rhs) {
     combine(vr);
   }
 }
 
-void vcd::VRange::combine(const pair<long>& rhs) {
-  vector<pair<long> >::iterator it = v.begin();
-  it += search(rhs);
-  // todo
+void vcd::CRange::combine(const pair<long, long>& rhs) {
+  v.insert(v.begin() + search(rhs), rhs);
+  normalize();
 }
 
-unsigned int vcd::VRange::search(const pair<long>& rhs) const {
+unsigned int vcd::CRange::search(const pair<long, long>& rhs) const {
   unsigned int s = v.size();
   unsigned int i = 0;
   unsigned int j = s/2;
@@ -64,11 +64,23 @@ unsigned int vcd::VRange::search(const pair<long>& rhs) const {
       i = j;
       j = (i + k + 1)/2;
       continue;
-    } else if(rhs.first > v[j].first && v[i].first >= rhs.first) {
+    } else if(rhs.first > v[j].first && v[i].first > rhs.first) {
       k = j;
       j = (i + k)/2;
       continue;
     }
     return j;
+  }
+}
+
+void vcd::CRange::normalize() {
+  int i = 0;
+  while(i < v.size() - 1) {
+    if(v[i].second <= v[i+1].first) { // combine the two
+      if(v[i].second > v[i+1].second)
+        v[i].second = v[i+1].second;
+      v.erase(v.begin() + (i + 1));
+      continue;
+    }
   }
 }

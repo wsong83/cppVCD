@@ -31,27 +31,26 @@
 
 #include <vector>
 #include <list>
-#include <pair>
+#include <utility>
 
 namespace vcd {
   
   // vector
-  class VRange {
-  public:
-    std::vector<std::pair<long> > v;
-    typedef std::pair<long> vrange_type;
-    VRange& operator+ (const VRange&);
-
-  private:
-    void combine(const std::vector<std::pair<long> >&);
-  };
-  
-  // multi-dimentional range
   class CRange {
   public:
-    vector<VRange> r;
-  };
+    CRange() {};
+    CRange(long, long);
+    CRange(long);
+    std::vector<std::pair<long, long> > v;
+    typedef std::pair<long, long> crange_type;
+    CRange& operator+ (const CRange&);
 
+  private:
+    void combine(const std::vector<std::pair<long, long> >&);
+    void combine(const std::pair<long, long>&);
+    unsigned int search(const std::pair<long, long>&) const;
+    void normalize();
+  };
 }
 
 #endif

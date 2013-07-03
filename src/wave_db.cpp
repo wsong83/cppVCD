@@ -31,14 +31,15 @@
 using std::string;
 
 vcd::WaveDB::WaveDB() 
-  : delimiter('/'), time_unit("ns"), current_time(0) { }
+  : delimiter('/'), time_unit(1, "ns"), current_time(0) { }
 
 void vcd::WaveDB::set_delimiter(char d) {
   delimiter = d;
 }
 
-void vcd::WaveDB::set_time_unit(const string& u) {
-  time_unit = u;
+void vcd::WaveDB::set_time_unit(unsigned int v, const string& u) {
+  time_unit.first = v;
+  time_unit.second = u;
 }
 
 void vcd::WaveDB::push_scope(const string& s) {
@@ -61,7 +62,7 @@ void vcd::WaveDB::set_time(mpz_class t) {
   current_time = t;
 }
 
-void vcd::WaveDB::add_id(const std::string& id, const std::string& ref, const CRange& r, unsigned int width w) {
+void vcd::WaveDB::add_id(const std::string& id, const std::string& ref, const CRange& r, unsigned int w) {
   idDB[id] = SigRecord(ref, r, w);
   sigDB[ref] += SigRecord(ref, r, w);
 }
