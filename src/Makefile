@@ -25,7 +25,7 @@ INCDIRS = -I.
 TARGETS = wave_db.o crange.o vcd_parser.o
 
 
-all: vcd.o vcd_util.o $(TARGETS)
+all: vcd.o vcd_util.o $(TARGETS) test
 
 vcd.o: vcd.cc vcd.y vcd_util.hpp wave_db.hpp crange.hpp
 	$(CXX) $(INCDIRS) $(CXXFLAGS) -c $< -o $@
@@ -35,6 +35,9 @@ vcd_util.o: vcd_util.cpp vcd_util.hpp wave_db.hpp crange.hpp
 
 $(TARGETS): %.o:%.cpp %.hpp
 	$(CXX) $(INCDIRS) $(CXXFLAGS) -c $< -o $@
+
+test: test.cpp 
+	$(CXX) $< vcd.o vcd_util.o $(TARGETS) -o $@
 
 bison: vcd.cc
 

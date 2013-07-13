@@ -43,7 +43,7 @@ BISONDIRS = src.bison
 
 all: bison subdirs
 	-mkdir bin
-	-mv src/vcd_parser bin/
+	-mv src/test bin/
 
 bison: $(BISONDIRS)
 
