@@ -45,10 +45,14 @@ int vcd::VCDLexer::lexer(vcd_token_type * rv) {
       else std::getline(*istm, buf);
     }
 
+    std::cout << "buf: " << buf;
+
     string token = next_token();
     if(token.empty()) continue;
     else {
-      return validate_token(token, rv);
+      int rvt = validate_token(token, rv);
+      std::cout << " |token: " << rvt << std::endl;
+      return rvt;
     }
   }
 }
@@ -67,12 +71,20 @@ string vcd::VCDLexer::next_token() {
 int vcd::VCDLexer::validate_token(const string& t, vcd_token_type * tt) {
   switch(state) {
   case S_BEGIN: {
+    if(t == "$comment")
+      { state = S_COMMENT;        return TType::VCDComment;   }
+    if(t == "$date")
+      { state = S_COMMENT;        return TType::VCDDate;      }
+    if(t == "$enddefinitions")    return TType::VCDEndDef;
     if(t == "$scope")     
       { state = S_SCOPE_DECL;     return TType::VCDScope;     }
     if(t == "$timescale") 
       { state = S_TIMESCALE_DECL; return TType::VCDTimeScale; }
+    if(t == "$upscope")           return TType::VCDUpScope;
     if(t == "$var")       
       { state = S_VAR_DECL;       return TType::VCDVar;       }
+    if(t == "$version")
+      { state = S_COMMENT;        return TType::VCDVersion;   }
     if(t == "$dumpall")   
       { state = S_BEGIN; tt->tType = sim_all;  return TType::VCDSimCmdType;  }
     if(t == "$dumpoff")   
@@ -110,6 +122,15 @@ int vcd::VCDLexer::validate_token(const string& t, vcd_token_type * tt) {
       state = S_VALUE_CHANGE_VR;
       buf.insert(0, t, 1, t.size()-1); 
       return 'r';
+    }
+    if(t == "$end")  return TType::VCDEnd;
+    tt->tStr = t;
+    return TType::VCDStr;
+  }
+  case S_COMMENT: {
+    if(t == "$end") {
+      state = S_BEGIN;
+      return TType::VCDEnd;
     }
     tt->tStr = t;
     return TType::VCDStr;
@@ -207,7 +228,7 @@ int vcd::VCDLexer::validate_token(const string& t, vcd_token_type * tt) {
     return conv_to_string(t, tt);
   }
   case S_VAR_CID: {
-    if(t == "$end") { state = S_BEGIN; return conv_to_string(t, tt); }
+    if(t == "$end") { state = S_BEGIN; return TType::VCDEnd; }
     if(t[0] == '[') {
       state = S_VAR_RANGE;
       buf.insert(0, t, 1, t.size()-1); 
@@ -234,13 +255,17 @@ int vcd::VCDLexer::validate_token(const string& t, vcd_token_type * tt) {
     return conv_to_string(t, tt);
   }
   case S_VALUE_CHANGE_VB: {
-    state = S_BEGIN;
+    state = S_VALUE_CHANGE_ID;
     tt->tBValue = t;
     return TType::VCDBValue;
   }    
   case S_VALUE_CHANGE_VR: {
-    state = S_BEGIN;
+    state = S_VALUE_CHANGE_ID;
     return conv_to_real(t, tt);
+  }
+  case S_VALUE_CHANGE_ID: {
+    state = S_BEGIN;
+    return conv_to_string(t, tt);
   }
   default:
     assert(0 == "wrong lexer state");
@@ -255,7 +280,13 @@ int vcd::VCDLexer::conv_to_string(const string& t, vcd_token_type * tt) {
 
 int vcd::VCDLexer::conv_to_dec(const string& t, vcd_token_type * tt) {
   try {
-    tt->tNum = t;
+    unsigned int pos = t.find_first_not_of("0123456789");
+    string nstring = t;
+    if(pos < t.size()) {
+      nstring = t.substr(0, pos);
+      buf.insert(0, t, pos, t.size()-1);
+    }
+    tt->tNum = nstring;
     return TType::VCDNum;
   } catch(std::invalid_argument &) {
     assert(0 == "unrecognizable decimal number");
@@ -266,11 +297,31 @@ int vcd::VCDLexer::conv_to_dec(const string& t, vcd_token_type * tt) {
 
 int vcd::VCDLexer::conv_to_real(const string& t, vcd_token_type * tt) {
   try {
-    tt->tReal = boost::lexical_cast<double>(t);
+    unsigned int pos = t.find_first_not_of("0123456789.");
+    string nstring = t;
+    if(pos < t.size()) {
+      nstring = t.substr(0, pos);
+      buf.insert(0, t, pos, t.size()-1);
+    }
+    tt->tReal = boost::lexical_cast<double>(nstring);
     return TType::VCDReal;
   } catch(boost::bad_lexical_cast &) {
     assert(0 == "unrecognizable real number");
     tt->tStr = t;
     return TType::VCDStr;
+  }
+}
+
+
+string vcd::timeunit_stype(int t) {
+  switch(t) {
+  case time_s:  return "s";
+  case time_ms: return "ms";
+  case time_us: return "us";
+  case time_ns: return "ns";
+  case time_ps: return "ps";
+  case time_fs: return "fs";
+  default: assert(0 == "wrong time unit type!");
+    return "ns";
   }
 }

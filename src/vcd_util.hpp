@@ -65,11 +65,12 @@ namespace vcd {
   private:
     enum state_t {
       S_BEGIN = 0,
+      S_COMMENT,
       S_SCOPE_DECL, S_SCOPE_TYPE,
       S_TIMESCALE_DECL, S_TIMESCALE_TIME,
       S_VAR_DECL, S_VAR_TYPE, S_VAR_WIDTH, S_VAR_ID, S_VAR_CID, S_VAR_RANGE,
       S_SIM_TIME, 
-      S_VALUE_CHANGE_SCALAR, S_VALUE_CHANGE_VB, S_VALUE_CHANGE_VR
+      S_VALUE_CHANGE_SCALAR, S_VALUE_CHANGE_VB, S_VALUE_CHANGE_VR, S_VALUE_CHANGE_ID
     };
 
     std::istream * istm;        // input stream

@@ -41,6 +41,7 @@
 #define yylex lexer->lexer
 
   using namespace vcd;
+
 %}
 
 
@@ -100,6 +101,7 @@ declaration_command
     | "$scope"             scope_decl             "$end"   
     | "$timescale"         timescale_decl         "$end"
     | "$upscope"                                  "$end"
+    { db->pop_scope(); }
     | "$var"               var_decl               "$end"
     | "$version"           comments               "$end"
 
@@ -108,8 +110,8 @@ comment_command
 
 comments
     :
-    | VCDStr   {}
-    | comments VCDStr {}
+    | VCDStr   { }
+    | comments VCDStr { }
 
 scope_decl
     : VCDScopeType identifier
@@ -179,3 +181,10 @@ vector_value_change
 
 identifier
 : VCDStr  { $$ = $1; }
+
+%%
+
+void vcd::vcd_parser::error (const vcd::location& loc, const std::string& msg) {
+  std::cout << loc << ":" << msg << std::endl;
+  }
+

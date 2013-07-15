@@ -41,15 +41,7 @@ namespace vcd {
     CRange() {};
     CRange(long, long);
     CRange(long);
-    std::vector<std::pair<long, long> > v;
-    typedef std::pair<long, long> crange_type;
-    CRange& operator+ (const CRange&);
-
-  private:
-    void combine(const std::vector<std::pair<long, long> >&);
-    void combine(const std::pair<long, long>&);
-    unsigned int search(const std::pair<long, long>&) const;
-    void normalize();
+    std::pair<long, long> range;
   };
 }
 

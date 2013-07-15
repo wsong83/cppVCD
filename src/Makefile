@@ -23,6 +23,7 @@
 
 INCDIRS = -I.
 TARGETS = wave_db.o crange.o vcd_parser.o
+LINK_FLAGS = -lgmp
 
 
 all: vcd.o vcd_util.o $(TARGETS) test
@@ -37,7 +38,7 @@ $(TARGETS): %.o:%.cpp %.hpp
 	$(CXX) $(INCDIRS) $(CXXFLAGS) -c $< -o $@
 
 test: test.cpp 
-	$(CXX) $< vcd.o vcd_util.o $(TARGETS) -o $@
+	$(CXX) $< vcd.o vcd_util.o $(TARGETS) $(LINK_FLAGS) -o $@
 
 bison: vcd.cc
 

@@ -30,6 +30,19 @@
 
 using std::string;
 
+vcd::SigRecord::SigRecord(const std::string& sig_name, const CRange& range, unsigned int width)
+  : sig_name(sig_name), range(range), width(width) {}
+
+void vcd::SigRecord::record_change(mpz_class ctime, const std::string& val) {
+  if(value.empty() || value.back().second != val)
+    value.push_back(std::pair<mpz_class, string>(ctime, val));
+}
+
+void vcd::SigRecord::record_change(mpz_class ctime, const double& val) {
+  if(rvalue.empty() || rvalue.back().second != val)
+    rvalue.push_back(std::pair<mpz_class, double>(ctime, val));
+}
+
 vcd::WaveDB::WaveDB() 
   : delimiter('/'), time_unit(1, "ns"), current_time(0) { }
 
@@ -64,6 +77,5 @@ void vcd::WaveDB::set_time(mpz_class t) {
 
 void vcd::WaveDB::add_id(const std::string& id, const std::string& ref, const CRange& r, unsigned int w) {
   idDB[id] = SigRecord(ref, r, w);
-  sigDB[ref] += SigRecord(ref, r, w);
 }
 

@@ -40,17 +40,16 @@ namespace vcd {
 
   class SigRecord {
   public:
-    SigRecord();
+    SigRecord() {}
     SigRecord(const std::string&, const CRange&, unsigned int);
     std::string sig_name;
     CRange range;
-    std::map<mpz_class, std::string> value;
-    std::map<mpz_class, double> rvalue;
+    unsigned int width;
+    std::list<std::pair<mpz_class, std::string> > value;
+    std::list<std::pair<mpz_class, double> > rvalue;
 
-    void record_change(mpz_class, const SigRecord&, const char&);
-    void record_change(mpz_class, const SigRecord&, const std::string&);
-    void record_change(mpz_class, const SigRecord&, const double&);
-    SigRecord& operator+= (const SigRecord&);
+    void record_change(mpz_class, const std::string&);
+    void record_change(mpz_class, const double&);
   };
 
   class WaveDB {
@@ -66,9 +65,7 @@ namespace vcd {
     template<typename VT>
     void add_change(const std::string& id, const VT& v) {
       assert(idDB.count(id));
-      SigRecord sr = idDB[id];
-      assert(sigDB.count(sr.sig_name));
-      sigDB[sr.sig_name].record_change(current_time, sr, v);
+      idDB[id].record_change(current_time, v);
     }
 
   private:

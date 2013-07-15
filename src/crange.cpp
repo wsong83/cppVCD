@@ -33,54 +33,9 @@ using namespace vcd;
 using std::pair;
 using std::vector;
 
-CRange& vcd::CRange::operator+ (const CRange& rhs) {
-  if(v.size() == 0)
-    v = rhs.v;
-  else if(rhs.v.size() > 0)
-    combine(rhs.v);
+vcd::CRange::CRange(long upb, long lowb)
+  : range(upb, lowb) {}
 
-  return *this;
-}
+vcd::CRange::CRange(long selector)
+  : range(selector, selector) {}
 
-void vcd::CRange::combine(const vector<pair<long, long> >& rhs) {
-  BOOST_FOREACH(const crange_type& vr, rhs) {
-    combine(vr);
-  }
-}
-
-void vcd::CRange::combine(const pair<long, long>& rhs) {
-  v.insert(v.begin() + search(rhs), rhs);
-  normalize();
-}
-
-unsigned int vcd::CRange::search(const pair<long, long>& rhs) const {
-  unsigned int s = v.size();
-  unsigned int i = 0;
-  unsigned int j = s/2;
-  unsigned int k = s-1;
-
-  while(true) {
-    if(v[j].first > rhs.first && rhs.first >= v[k].first) {
-      i = j;
-      j = (i + k + 1)/2;
-      continue;
-    } else if(rhs.first > v[j].first && v[i].first > rhs.first) {
-      k = j;
-      j = (i + k)/2;
-      continue;
-    }
-    return j;
-  }
-}
-
-void vcd::CRange::normalize() {
-  int i = 0;
-  while(i < v.size() - 1) {
-    if(v[i].second <= v[i+1].first) { // combine the two
-      if(v[i].second > v[i+1].second)
-        v[i].second = v[i+1].second;
-      v.erase(v.begin() + (i + 1));
-      continue;
-    }
-  }
-}
